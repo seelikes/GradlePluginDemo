@@ -1,0 +1,18 @@
+{
+    "outputProjectPaths": [
+        "E:\kill\GradlePluginDemo",
+        "D:\kill\GradlePluginDemo",
+        "M:\kill\GradlePluginDemo"
+    ],
+    "ignoreDirectories": [
+        ".git",
+        "build",
+        "repo"
+    ],
+    "ignoreFiles": [
+        "local.properties",
+        ".iml"
+    ],
+    "copyEmptyDirectory": false,
+    "clearOutputProjectPath": "yes"
+}
