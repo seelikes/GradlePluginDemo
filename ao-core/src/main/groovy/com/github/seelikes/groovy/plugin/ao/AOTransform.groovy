@@ -3,8 +3,8 @@ package com.github.seelikes.groovy.plugin.ao
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import org.apache.commons.codec.digest.DigestUtils
-import org.gradle.api.Project
 import org.apache.commons.io.FileUtils
+import org.gradle.api.Project
 
 class AOTransform extends Transform {
     Project project
@@ -35,7 +35,7 @@ class AOTransform extends Transform {
 
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
-        System.out.println("AOTransform start...")
+        println "AOTransform start..."
 
         transformInvocation.inputs.each { input ->
             input.directoryInputs.each { directoryInput ->
@@ -55,6 +55,7 @@ class AOTransform extends Transform {
                 FileUtils.copyFile(jarInput.file, dest)
             }
         }
-        System.out.println("AOTransform end...")
+
+        println "AOTransform end..."
     }
 }

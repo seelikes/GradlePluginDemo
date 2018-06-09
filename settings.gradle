@@ -1,3 +1,4 @@
 include ':app'
-include ':ao'
+include ':ao-annotation'
+include ':ao-core'
 

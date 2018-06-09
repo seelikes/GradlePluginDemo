@@ -1,0 +1,51 @@
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+javadoc {
+    options.encoding = "UTF-8"
+}
+
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
+
+task javadocJar(type: Jar) {
+    classifier "javadoc"
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier "sources"
+    from sourceSets.main.allSource
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId "com.github.seelikes.groovy.plugin"
+            artifactId "ao-annotation"
+            version "1.0.00"
+            description "ao ao ao annotation"
+            artifact jar
+            artifact javadocJar
+            artifact sourcesJar
+            pom.withXml {
+                def dependencies = asNode().appendNode("dependencies")
+                wrapIntoDependencies(dependencies, configurations.implementation, "provided")
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url uri('../repo')
+        }
+    }
+}

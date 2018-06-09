@@ -9,6 +9,7 @@ class AOPlugin implements Plugin<Project> {
     void apply(Project project) {
         def android = project.extensions.getByType(AppExtension)
         android.registerTransform(new AOTransform(project))
+        project.extensions.create("ao", AOExtension)
 
         android.applicationVariants.all { variant ->
             def variantData = variant.variantData

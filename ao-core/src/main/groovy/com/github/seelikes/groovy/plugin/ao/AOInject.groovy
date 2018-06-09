@@ -17,6 +17,7 @@ class AOInject {
                 String filePath = file.absolutePath
                 println "filePath = " + filePath
                 println "project.buildDir.absolutePath: " + project.buildDir
+                println "project.extensions.ao.packageName: " + project.extensions.ao.packageName
                 if (file.name == "MainActivity.class") {
                     CtClass ctClass = ClassPool.default.getCtClass("com.ljq.myreplugindemo.MainActivity")
                     println "ctClass = " + ctClass
