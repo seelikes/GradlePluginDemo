@@ -1,11 +1,10 @@
 package com.github.seelikes.groovy.plugin.ao
 
-import com.android.build.api.transform.QualifiedContent
-import com.android.build.api.transform.Transform
-import com.android.build.api.transform.TransformException
-import com.android.build.api.transform.TransformInvocation
+import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
+import org.apache.commons.codec.digest.DigestUtils
 import org.gradle.api.Project
+import org.apache.commons.io.FileUtils
 
 class AOTransform extends Transform {
     Project project
@@ -36,6 +35,26 @@ class AOTransform extends Transform {
 
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
-        super.transform(transformInvocation)
+        System.out.println("AOTransform start...")
+
+        transformInvocation.inputs.each { input ->
+            input.directoryInputs.each { directoryInput ->
+                AOInject.inject(directoryInput.file.absolutePath, project)
+                def dest = transformInvocation.outputProvider.getContentLocation(directoryInput.name, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
+                FileUtils.copyDirectory(directoryInput.file, dest)
+            }
+
+            input.jarInputs.each { jarInput ->
+                def jarName = jarInput.name
+                println("jar = " + jarInput.file.getAbsolutePath())
+                def md5Name = DigestUtils.md5Hex(jarInput.file.getAbsolutePath())
+                if (jarName.endsWith(".jar")) {
+                    jarName = jarName.substring(0, jarName.length() - 4)
+                }
+                def dest = transformInvocation.outputProvider.getContentLocation(jarName + md5Name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
+                FileUtils.copyFile(jarInput.file, dest)
+            }
+        }
+        System.out.println("AOTransform end...")
     }
 }
