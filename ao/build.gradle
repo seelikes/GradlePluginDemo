@@ -24,7 +24,7 @@ uploadArchives {
                 artifactId "ao"
                 packaging "jar"
                 description "ao ao ao"
-                version "1.1.00"
+                version "1.1.01"
                 groupId "com.github.seelikes.groovy.plugin"
 
                 developers {

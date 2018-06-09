@@ -10,9 +10,18 @@ class AOPlugin implements Plugin<Project> {
         def android = project.extensions.getByType(AppExtension)
         android.registerTransform(new AOTransform(project))
 
-        project.task('aoTransform') {
-            doLast {
-                System.out.println('+++++++++++++++++++++aoTransform task')
+        android.applicationVariants.all { variant ->
+            def variantData = variant.variantData
+            def scope = variantData.scope
+
+            def aoTransform = project.task(scope.getTaskName("aoTransform", "AOPlugin"))
+            aoTransform.doLast {
+                System.out.println('+++++++++++++++++++++aoTransform ao ao ao')
+            }
+            def generateBuildConfig = project.tasks.getByName(scope.getGenerateBuildConfigTask().name)
+            if (generateBuildConfig) {
+                aoTransform.dependsOn generateBuildConfig
+                generateBuildConfig.finalizedBy aoTransform
             }
         }
     }
