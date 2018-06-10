@@ -4,12 +4,12 @@
         "D:\kill\GradlePluginDemo",
         "M:\kill\GradlePluginDemo"
     ],
-    "ignoreDirectories": [
+    "dirs": [
         ".git",
         "build",
         "repo"
     ],
-    "ignoreFiles": [
+    "files": [
         "local.properties",
         ".iml"
     ],
