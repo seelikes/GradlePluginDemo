@@ -45,7 +45,11 @@ publishing {
 
     repositories {
         maven {
-            url uri('../repo')
+            url project.property('deploy.release.url')
+            credentials {
+                username project.property("deploy.release.user.name")
+                password project.property("deploy.release.user.password")
+            }
         }
     }
 }
