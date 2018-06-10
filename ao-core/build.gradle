@@ -18,7 +18,7 @@ dependencies {
     compile 'commons-codec:commons-codec:1.11'
     compile 'commons-io:commons-io:2.5'
     compile 'javassist:javassist:3.12.1.GA'
-    compile 'com.github.seelikes.groovy.plugin:ao-annotation:1.0.00'
+    compile "com.github.seelikes.groovy.plugin:ao-annotation:$ao_annotation_version"
 }
 
 task javadocJar(type: Jar) {

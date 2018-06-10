@@ -4,7 +4,7 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
-if (file('../repo').exists()) {
+if (file("../repo/com/github/seelikes/groovy/plugin/ao-annotation/$ao_core_version").exists()) {
     apply plugin: 'seelikes-android-ao'
 }
 
@@ -27,8 +27,10 @@ android {
     }
 }
 
-ao {
-    packageName android.defaultConfig.applicationId
+if (file("../repo/com/github/seelikes/groovy/plugin/ao-annotation/$ao_core_version").exists()) {
+    ao {
+        packageName android.defaultConfig.applicationId
+    }
 }
 
 dependencies {

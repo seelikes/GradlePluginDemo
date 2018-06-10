@@ -7,8 +7,10 @@ buildscript {
     repositories {
         google()
         jcenter()
-        maven {
-            url uri('./repo')
+        if (file('./repo').exists()) {
+            maven {
+                url uri('./repo')
+            }
         }
     }
     dependencies {
@@ -17,7 +19,7 @@ buildscript {
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
-        if (file('repo').exists()) {
+        if (file("../repo/com/github/seelikes/groovy/plugin/ao-annotation/$ao_core_version").exists()) {
             classpath 'com.github.seelikes.groovy.plugin:ao-core:1.0.02'
         }
     }
@@ -27,8 +29,10 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven {
-            url uri('./repo')
+        if (file('./repo').exists()) {
+            maven {
+                url uri('./repo')
+            }
         }
     }
 }
