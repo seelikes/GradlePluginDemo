@@ -1,6 +1,7 @@
 package com.github.seelikes.groovy.plugin.ao
 
 import com.android.build.api.transform.*
+import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.pipeline.TransformManager
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
@@ -36,6 +37,12 @@ class AOTransform extends Transform {
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
         println "AOTransform start..."
+
+        if (project.extensions.ao.packageName == null || project.extensions.ao.packageName.empty) {
+            project.extensions.ao.packageName = project.extensions.getByName(AppExtension).defaultConfig.applicationId
+        }
+
+        println "project.extensions.ao.packageName: " + project.extensions.ao.packageName
 
         transformInvocation.inputs.each { input ->
             input.directoryInputs.each { directoryInput ->

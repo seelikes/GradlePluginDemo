@@ -6,6 +6,8 @@ import javassist.CtMethod
 import org.gradle.api.Project
 
 class AOInject {
+    static CtClass BuildConfig;
+
     static void inject(String path, Project project) {
         ClassPool.default.appendClassPath path
         ClassPool.default.appendClassPath project.android.bootClasspath[0].toString()
@@ -15,11 +17,17 @@ class AOInject {
         if (dir.directory) {
             dir.eachFileRecurse { file ->
                 String filePath = file.absolutePath
-                println "filePath = " + filePath
+                println "filePath: " + filePath
                 println "project.buildDir.absolutePath: " + project.buildDir
                 println "project.extensions.ao.packageName: " + project.extensions.ao.packageName
+
+                if (BuildConfig == null) {
+                    ClassPool.default.importPackage project.extensions.ao.packageName + "." + "BuildConfig"
+                    BuildConfig = ClassPool.default.getCtClass(project.extensions.ao.packageName + "." + "BuildConfig")
+                }
+
                 if (file.name == "MainActivity.class") {
-                    CtClass ctClass = ClassPool.default.getCtClass("com.ljq.myreplugindemo.MainActivity")
+                    CtClass ctClass = ClassPool.default.getCtClass(findClassName(filePath, project))
                     println "ctClass = " + ctClass
                     if (ctClass.frozen) {
                         ctClass.defrost()
@@ -37,5 +45,13 @@ class AOInject {
                 }
             }
         }
+    }
+
+    static String findClassName(String path, Project project) {
+        String packagePath = project.extensions.ao.packageName.replaceAll("\\.", "\\\\")
+        println "packagePath: " + packagePath
+        println "path: " + path
+        println "path.indexOf(packagePath): " + path.indexOf(packagePath)
+        return path.substring(path.indexOf(packagePath)).replaceAll("\\\\", ".")
     }
 }
