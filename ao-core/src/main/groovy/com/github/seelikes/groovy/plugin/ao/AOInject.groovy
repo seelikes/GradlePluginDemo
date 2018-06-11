@@ -2,11 +2,13 @@ package com.github.seelikes.groovy.plugin.ao
 
 import javassist.ClassPool
 import javassist.CtClass
-import javassist.CtMethod
+import javassist.CtField
 import org.gradle.api.Project
 
+import java.lang.reflect.Modifier
+
 class AOInject {
-    static CtClass BuildConfig;
+    static BuildConfigHolder holder
 
     static void inject(String path, Project project) {
         ClassPool.default.appendClassPath path
@@ -16,30 +18,41 @@ class AOInject {
         File dir = new File(path)
         if (dir.directory) {
             dir.eachFileRecurse { file ->
-                String filePath = file.absolutePath
-                println "filePath: " + filePath
-                println "project.buildDir.absolutePath: " + project.buildDir
-                println "project.extensions.ao.packageName: " + project.extensions.ao.packageName
+                if (file.name.endsWith(".class")) {
+                    String filePath = file.absolutePath
+                    println "filePath: " + filePath
+                    println "project.buildDir.absolutePath: " + project.buildDir
+                    println "project.extensions.ao.packageName: " + project.extensions.ao.packageName
 
-                if (BuildConfig == null) {
-                    ClassPool.default.importPackage project.extensions.ao.packageName + "." + "BuildConfig"
-                    BuildConfig = ClassPool.default.getCtClass(project.extensions.ao.packageName + "." + "BuildConfig")
-                }
+                    if (holder == null) {
+                        ClassPool.default.appendClassPath project.extensions.ao.packageName + "." + "BuildConfig"
+                        CtClass BuildConfig = ClassPool.default.getCtClass(project.extensions.ao.packageName + "." + "BuildConfig")
+                        holder = new BuildConfigHolder(BuildConfig)
+                    }
 
-                if (file.name == "MainActivity.class") {
-                    CtClass ctClass = ClassPool.default.getCtClass(findClassName(filePath, project))
-                    println "ctClass = " + ctClass
+                    def className = findClassName(filePath, project)
+                    println "hxhxxhxhxxh"
+                    if (className == null || className.empty) {
+                        return
+                    }
+                    println "zdvf sdgsgrrdfg"
+                    if (className == project.extensions.ao.packageName + "." + "BuildConfig.class") {
+                        return
+                    }
+                    println "className: " + className
+                    CtClass ctClass = ClassPool.default.getCtClass(className.substring(0, className.length() - 6))
+                    println "ctClass: " + ctClass
                     if (ctClass.frozen) {
                         ctClass.defrost()
                     }
 
-                    CtMethod ctMethod = ctClass.getDeclaredMethod("onCreate")
+                    for (CtField field : ctClass.modifiers) {
+                        if ((field.modifiers & Modifier.STATIC) == Modifier.STATIC) {
+                            ctClass.removeField(field)
+                            ctClass.addField(field, holder.getValueAsString(field.name))
+                        }
+                    }
 
-                    println "方法名 = " + ctMethod
-
-                    String insetBeforeStr = """ android.widget.Toast.makeText(this,"我是被插入的Toast代码~!!",android.widget.Toast.LENGTH_SHORT).show();
-                                                """
-                    ctMethod.insertBefore insetBeforeStr
                     ctClass.writeFile path
                     ctClass.detach()
                 }
@@ -52,6 +65,32 @@ class AOInject {
         println "packagePath: " + packagePath
         println "path: " + path
         println "path.indexOf(packagePath): " + path.indexOf(packagePath)
+        if (path.indexOf(packagePath) == -1) {
+            return null
+        }
         return path.substring(path.indexOf(packagePath)).replaceAll("\\\\", ".")
+    }
+
+    static class BuildConfigHolder {
+        CtClass BuildConfig
+        Map<String, CtField> fields
+
+        BuildConfigHolder(CtClass BuildConfig) {
+            this.BuildConfig = BuildConfig
+            fields = new HashMap<>()
+            for (CtField field : this.BuildConfig.declaredFields) {
+                if ((field.modifiers & Modifier.STATIC) == Modifier.STATIC && (field.modifiers & Modifier.PUBLIC) == Modifier.PUBLIC) {
+                    fields.put(field.name, field)
+                }
+            }
+        }
+
+        String getValueAsString(String name) {
+            CtField field = fields.get(name)
+            if (field == null) {
+                return "null"
+            }
+            return String.valueOf(field.getConstantValue())
+        }
     }
 }

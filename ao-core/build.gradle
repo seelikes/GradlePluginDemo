@@ -29,7 +29,7 @@ publishing {
         maven(MavenPublication) {
             groupId "com.github.seelikes.groovy.plugin"
             artifactId "ao-core"
-            version "1.0.03"
+            version "1.0.04"
             description "ao ao ao annotation"
             artifact jar
             artifact javadocJar
