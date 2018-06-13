@@ -46,7 +46,8 @@ class AOInject {
                         ctClass.defrost()
                     }
 
-                    for (CtField field : ctClass.modifiers) {
+                    for (CtField field : ctClass.declaredFields) {
+                        println "(field.modifiers & Modifier.STATIC) == Modifier.STATIC: " + ((field.modifiers & Modifier.STATIC) == Modifier.STATIC)
                         if ((field.modifiers & Modifier.STATIC) == Modifier.STATIC) {
                             ctClass.removeField(field)
                             ctClass.addField(field, holder.getValueAsString(field.name))
