@@ -1,5 +1,6 @@
 package com.github.seelikes.groovy.plugin.ao
 
+import com.github.seelikes.groovy.plugin.ao.annotation.Inject
 import javassist.ClassPool
 import javassist.CtClass
 import javassist.CtField
@@ -9,6 +10,9 @@ import java.lang.reflect.Modifier
 
 class AOInject {
     static BuildConfigHolder holder
+    static CtClass StringClass
+    static CtClass CharacterClass
+    static CtClass charClass
 
     static void inject(String path, Project project) {
         ClassPool.default.appendClassPath path
@@ -19,10 +23,13 @@ class AOInject {
         if (dir.directory) {
             dir.eachFileRecurse { file ->
                 if (file.name.endsWith(".class")) {
+
+                    if (file.name.matches(/^R\$[a-zA-Z]+?\.class$/) || file.name == "R.class") {
+                        return
+                    }
+
                     String filePath = file.absolutePath
                     println "filePath: " + filePath
-                    println "project.buildDir.absolutePath: " + project.buildDir
-                    println "project.extensions.ao.packageName: " + project.extensions.ao.packageName
 
                     if (holder == null) {
                         ClassPool.default.appendClassPath project.extensions.ao.packageName + "." + "BuildConfig"
@@ -30,27 +37,49 @@ class AOInject {
                         holder = new BuildConfigHolder(BuildConfig)
                     }
 
-                    def className = findClassName(filePath, project)
-                    println "hxhxxhxhxxh"
-                    if (className == null || className.empty) {
+                    if (StringClass == null) {
+                        StringClass = ClassPool.default.get(String.class.canonicalName)
+                    }
+
+                    if (CharacterClass == null) {
+                        CharacterClass = ClassPool.default.get(Character.class.canonicalName)
+                    }
+
+                    if (charClass == null) {
+                        charClass = ClassPool.default.get(char.class.canonicalName)
+                    }
+
+                    def classCanonicalName = findClassName(filePath, project)
+                    if (classCanonicalName == null || classCanonicalName.empty) {
                         return
                     }
-                    println "zdvf sdgsgrrdfg"
-                    if (className == project.extensions.ao.packageName + "." + "BuildConfig.class") {
+                    if (classCanonicalName == project.extensions.ao.packageName + "." + "BuildConfig.class") {
                         return
                     }
-                    println "className: " + className
-                    CtClass ctClass = ClassPool.default.getCtClass(className.substring(0, className.length() - 6))
-                    println "ctClass: " + ctClass
+
+
+                    CtClass ctClass = ClassPool.default.getCtClass(classCanonicalName.substring(0, classCanonicalName.length() - 6))
                     if (ctClass.frozen) {
                         ctClass.defrost()
                     }
 
                     for (CtField field : ctClass.declaredFields) {
-                        println "(field.modifiers & Modifier.STATIC) == Modifier.STATIC: " + ((field.modifiers & Modifier.STATIC) == Modifier.STATIC)
                         if ((field.modifiers & Modifier.STATIC) == Modifier.STATIC) {
+                            Inject inject = field.getAnnotation(Inject.class)
+                            println "name: " + field.name + "; inject == null: " + (inject == null)
+                            if (inject == null) {
+                                continue
+                            }
                             ctClass.removeField(field)
-                            ctClass.addField(field, holder.getValueAsString(field.name))
+                            if (field.type == StringClass) {
+                                ctClass.addField(field, "\"" + holder.getValueAsString(inject.value()) + "\"")
+                            }
+                            else if (field.type == CharacterClass || field.type == charClass) {
+                                ctClass.addField(field, "\'" + holder.getValueAsString(inject.value()) + "\'")
+                            }
+                            else {
+                                ctClass.addField(field, holder.getValueAsString(inject.value()))
+                            }
                         }
                     }
 
@@ -88,10 +117,16 @@ class AOInject {
 
         String getValueAsString(String name) {
             CtField field = fields.get(name)
+            println "getValueAsString, name: " + name + "; field == null: " + (field == null)
             if (field == null) {
                 return "null"
             }
-            return String.valueOf(field.getConstantValue())
+            println "name: " + name + "; field.constantValue: " + field.constantValue
+
+            if (field.constantValue != null) {
+                return String.valueOf(field.constantValue)
+            }
+
         }
     }
 }
