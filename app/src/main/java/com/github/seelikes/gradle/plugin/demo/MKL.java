@@ -4,18 +4,23 @@ import com.github.seelikes.groovy.plugin.ao.annotation.Inject;
 
 public class MKL {
     @Inject("APPLICATION_ID")
-    public static final String DN = "DN";
+    public static String DN = "DN";
 
     @Inject("BUILD_TYPE")
-    public static final String DBT = "BUILD_TYPE";
+    public static String DBT = "BUILD_TYPE";
 
-//    @Inject("DEBUG")
-//    public static final boolean DB = false;
+    @Inject("DEBUG")
+    public static boolean DB = false;
 
     @Inject("HHHH")
-    public static final boolean HHHH = true;
+    public static boolean HHHH = true;
 
     public MKL() {
-
+        if (HHHH) {
+            System.out.println("HHHH");
+        }
+        if ("DN".equals(DN)) {
+            System.out.println("DN");
+        }
     }
 }

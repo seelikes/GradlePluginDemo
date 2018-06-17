@@ -5,6 +5,7 @@ import com.google.gson.Gson
 import javassist.ClassPool
 import javassist.CtClass
 import javassist.CtField
+import javassist.Loader
 import javassist.bytecode.AttributeInfo
 import javassist.bytecode.ConstantAttribute
 import org.gradle.api.Project
@@ -35,9 +36,7 @@ class AOInject {
                     println "filePath: " + filePath
 
                     if (holder == null) {
-                        ClassPool.default.appendClassPath project.extensions.ao.packageName + "." + "BuildConfig"
-                        CtClass BuildConfig = ClassPool.default.getCtClass(project.extensions.ao.packageName + "." + "BuildConfig")
-                        holder = new BuildConfigHolder(BuildConfig)
+                        holder = new BuildConfigHolder(project.extensions.ao.packageName + "." + "BuildConfig")
                     }
 
                     if (StringClass == null) {
@@ -67,26 +66,22 @@ class AOInject {
                             }
                             def value = holder.getValueAsString(inject.value())
                             println "name: " + field.name + "; value != null: " + (value != null)
-                            ctClass.removeField(field)
-                            println "name: " + field.name + "; value instanceof CtField.Initializer: " + (value instanceof CtField.Initializer)
-                            println "name: " + field.name + "; value instanceof CtField: " + (value instanceof CtField)
-                            println "name: " + field.name + "; value.class.canonicalName: " + value.class.canonicalName
-                            if (value instanceof CtField.Initializer) {
-                                ctClass.addField(field, value)
-                            }
-                            else if (value instanceof CtField) {
-                                value = new CtField(value, ctClass)
-                                value.setName(field.name)
-                                ctClass.addField(value)
-                            }
-                            else if (field.type == StringClass) {
-                                ctClass.addField(field, "\"" + value + "\"")
-                            }
-                            else if (field.type == CtClass.charType) {
-                                ctClass.addField(field, "\'" + value + "\'")
-                            }
-                            else {
-                                ctClass.addField(field, value)
+                            if (value != null) {
+                                ctClass.removeField(field)
+                                println "name: " + field.name + "; value instanceof CtField.Initializer: " + (value instanceof CtField.Initializer)
+                                println "name: " + field.name + "; value.class.canonicalName: " + value.class.canonicalName
+                                if (value instanceof CtField.Initializer) {
+                                    ctClass.addField(field, value)
+                                }
+                                else if (field.type == StringClass) {
+                                    ctClass.addField(field, "\"" + value + "\"")
+                                }
+                                else if (field.type == CtClass.charType) {
+                                    ctClass.addField(field, "\'" + value + "\'")
+                                }
+                                else {
+                                    ctClass.addField(field, value)
+                                }
                             }
                         }
                     }
@@ -111,10 +106,19 @@ class AOInject {
 
     static class BuildConfigHolder {
         CtClass BuildConfig
+        Class<?> javaClassBuildConfig
         Map<String, CtField> fields
 
-        BuildConfigHolder(CtClass BuildConfig) {
-            this.BuildConfig = BuildConfig
+        BuildConfigHolder(String canonicalName) {
+            ClassPool.default.appendClassPath canonicalName
+            Loader loader = new Loader(ClassPool.default)
+            this.javaClassBuildConfig = loader.loadClass(canonicalName)
+            println "VV"
+            this.BuildConfig = ClassPool.default.getCtClass(canonicalName)
+            println "AA"
+            if (this.BuildConfig.frozen) {
+                this.BuildConfig.defrost()
+            }
             for (AttributeInfo attribute : BuildConfig.classFile.attributes) {
                 println "attribute.name: " + attribute.name
             }
@@ -127,6 +131,10 @@ class AOInject {
                         println "name: " + field.name + "; attribute.name: " + attribute.name
                     }
                 }
+            }
+
+            for (MetaProperty property : BuildConfig.classFile.metaClass.properties) {
+                println "property.name: " + property.name
             }
         }
 
@@ -162,7 +170,7 @@ class AOInject {
 
             println "name: " + name + "; field.fieldInfo2.constantValue: " + field.fieldInfo2.constantValue
 
-            return field
+            return javaClassBuildConfig.getDeclaredField(name).get(null)
         }
     }
 }
