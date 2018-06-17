@@ -1,18 +1,21 @@
 package com.github.seelikes.groovy.plugin.ao
 
 import com.github.seelikes.groovy.plugin.ao.annotation.Inject
+import com.google.gson.Gson
 import javassist.ClassPool
 import javassist.CtClass
 import javassist.CtField
+import javassist.bytecode.AttributeInfo
+import javassist.bytecode.ConstantAttribute
 import org.gradle.api.Project
 
+import java.lang.reflect.Field
+import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 
 class AOInject {
     static BuildConfigHolder holder
     static CtClass StringClass
-    static CtClass CharacterClass
-    static CtClass charClass
 
     static void inject(String path, Project project) {
         ClassPool.default.appendClassPath path
@@ -41,14 +44,6 @@ class AOInject {
                         StringClass = ClassPool.default.get(String.class.canonicalName)
                     }
 
-                    if (CharacterClass == null) {
-                        CharacterClass = ClassPool.default.get(Character.class.canonicalName)
-                    }
-
-                    if (charClass == null) {
-                        charClass = ClassPool.default.get(char.class.canonicalName)
-                    }
-
                     def classCanonicalName = findClassName(filePath, project)
                     if (classCanonicalName == null || classCanonicalName.empty) {
                         return
@@ -70,15 +65,28 @@ class AOInject {
                             if (inject == null) {
                                 continue
                             }
+                            def value = holder.getValueAsString(inject.value())
+                            println "name: " + field.name + "; value != null: " + (value != null)
                             ctClass.removeField(field)
-                            if (field.type == StringClass) {
-                                ctClass.addField(field, "\"" + holder.getValueAsString(inject.value()) + "\"")
+                            println "name: " + field.name + "; value instanceof CtField.Initializer: " + (value instanceof CtField.Initializer)
+                            println "name: " + field.name + "; value instanceof CtField: " + (value instanceof CtField)
+                            println "name: " + field.name + "; value.class.canonicalName: " + value.class.canonicalName
+                            if (value instanceof CtField.Initializer) {
+                                ctClass.addField(field, value)
                             }
-                            else if (field.type == CharacterClass || field.type == charClass) {
-                                ctClass.addField(field, "\'" + holder.getValueAsString(inject.value()) + "\'")
+                            else if (value instanceof CtField) {
+                                value = new CtField(value, ctClass)
+                                value.setName(field.name)
+                                ctClass.addField(value)
+                            }
+                            else if (field.type == StringClass) {
+                                ctClass.addField(field, "\"" + value + "\"")
+                            }
+                            else if (field.type == CtClass.charType) {
+                                ctClass.addField(field, "\'" + value + "\'")
                             }
                             else {
-                                ctClass.addField(field, holder.getValueAsString(inject.value()))
+                                ctClass.addField(field, value)
                             }
                         }
                     }
@@ -107,10 +115,17 @@ class AOInject {
 
         BuildConfigHolder(CtClass BuildConfig) {
             this.BuildConfig = BuildConfig
+            for (AttributeInfo attribute : BuildConfig.classFile.attributes) {
+                println "attribute.name: " + attribute.name
+            }
             fields = new HashMap<>()
             for (CtField field : this.BuildConfig.declaredFields) {
                 if ((field.modifiers & Modifier.STATIC) == Modifier.STATIC && (field.modifiers & Modifier.PUBLIC) == Modifier.PUBLIC) {
+                    println "name: " + field.name  + "; field.fieldInfo.descriptor: " + field.fieldInfo.descriptor
                     fields.put(field.name, field)
+                    for (AttributeInfo attribute : field.fieldInfo.attributes) {
+                        println "name: " + field.name + "; attribute.name: " + attribute.name
+                    }
                 }
             }
         }
@@ -127,6 +142,27 @@ class AOInject {
                 return String.valueOf(field.constantValue)
             }
 
+            Method getInit = field.class.getDeclaredMethod "getInit"
+            println "name: " + name + "; getInit != null: " + (getInit != null)
+            if (getInit != null) {
+                boolean accessible = getInit.isAccessible()
+                try {
+                    getInit.setAccessible true
+                    CtField.Initializer initializer = getInit.invoke(field)
+                    if (initializer != null) {
+                        return initializer
+                    }
+                }
+                finally {
+                    getInit.setAccessible(accessible)
+                }
+            }
+
+            println "name: " + name + "; field.fieldInfo.constantValue: " + field.fieldInfo.constantValue
+
+            println "name: " + name + "; field.fieldInfo2.constantValue: " + field.fieldInfo2.constantValue
+
+            return field
         }
     }
 }

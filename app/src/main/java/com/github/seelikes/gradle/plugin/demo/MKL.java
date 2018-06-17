@@ -9,6 +9,13 @@ public class MKL {
     @Inject("BUILD_TYPE")
     public static final String DBT = "BUILD_TYPE";
 
-    @Inject("DEBUG")
-    public static final boolean DB = false;
+//    @Inject("DEBUG")
+//    public static final boolean DB = false;
+
+    @Inject("HHHH")
+    public static final boolean HHHH = true;
+
+    public MKL() {
+
+    }
 }
